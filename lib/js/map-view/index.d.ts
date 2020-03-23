@@ -14,6 +14,10 @@ export interface MapViewProps {
      */
     center?: LatLng;
     /**
+     * 是否逆地理编码屏幕中心点
+     */
+    centerCoordinateReGeocode?: boolean;
+    /**
      * 地图显示区域
      */
     region?: Region;
@@ -127,6 +131,10 @@ export interface MapViewProps {
      * 地图状态改变事件，在动画结束后触发
      */
     onStatusChangeComplete?: (status: MapStatus) => void;
+    /**
+     * 地图屏幕中心点改变，在动画结束后触发
+     */
+    onRegionCenterChange?: (center) => void;
     /**
      * 定位事件
      */

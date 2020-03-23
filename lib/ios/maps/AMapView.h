@@ -1,4 +1,7 @@
+#import <UIKit/UIKit.h>
+#import <AMapFoundationKit/AMapFoundationKit.h>
 #import <MAMapKit/MAMapKit.h>
+
 
 @class AMapMarker;
 
@@ -9,10 +12,13 @@
 @property(nonatomic, copy) RCTBubblingEventBlock onLongClick;
 @property(nonatomic, copy) RCTBubblingEventBlock onStatusChange;
 @property(nonatomic, copy) RCTBubblingEventBlock onStatusChangeComplete;
+@property(nonatomic, copy) RCTBubblingEventBlock onRegionCenterChange;
+
 
 @property(nonatomic) BOOL loaded;
 @property(nonatomic) MACoordinateRegion initialRegion;
 
 - (AMapMarker *)getMarker:(id <MAAnnotation>)annotation;
+
 
 @end

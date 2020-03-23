@@ -1,4 +1,5 @@
 #import <React/RCTUIManager.h>
+#import <AMapSearchKit/AMapSearchKit.h>
 #import "AMapView.h"
 #import "AMapMarker.h"
 #import "AMapOverlay.h"
@@ -7,6 +8,9 @@
 #pragma ide diagnostic ignored "-Woverriding-method-mismatch"
 
 @interface AMapViewManager : RCTViewManager <MAMapViewDelegate>
+@property(nonatomic,strong) AMapSearchAPI *search;
+@property(nonatomic) BOOL centerCoordinateReGeocode;
+
 @end
 
 @implementation AMapViewManager
@@ -18,9 +22,14 @@ RCT_EXPORT_MODULE()
     mapView.centerCoordinate = CLLocationCoordinate2DMake(39.9242, 116.3979);
     mapView.zoomLevel = 10;
     mapView.delegate = self;
+    
+    self.search = [[AMapSearchAPI alloc] init];
+    self.search.delegate = self;
+    
     return mapView;
 }
 
+RCT_EXPORT_VIEW_PROPERTY(centerCoordinateReGeocode, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(locationEnabled, BOOL)
 RCT_REMAP_VIEW_PROPERTY(showsCompass, showCompass, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(showsScale, BOOL)
@@ -50,6 +59,9 @@ RCT_EXPORT_VIEW_PROPERTY(onLongClick, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLocation, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onStatusChange, RCTBubblingEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onStatusChangeComplete, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onRegionCenterChange, RCTBubblingEventBlock)
+
+
 
 RCT_EXPORT_METHOD(setStatus:(nonnull NSNumber *)reactTag params:(NSDictionary *)params duration:(NSInteger)duration) {
     [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
@@ -169,6 +181,30 @@ RCT_EXPORT_METHOD(setStatus:(nonnull NSNumber *)reactTag params:(NSDictionary *)
 }
 
 - (void)mapView:(AMapView *)mapView regionDidChangeAnimated:(BOOL)animated {
+    // 获取屏幕中心点
+//    MACoordinateRegion region;
+//    CLLocationCoordinate2D centerCoordinate = mapView.region.center;
+//    region.center = centerCoordinate;
+//    NSLog(@"00000000000000000");
+//    NSLog(@"center point %e %e", centerCoordinate.latitude,centerCoordinate.latitude);
+    
+    if(mapView.onRegionCenterChange){
+        CLLocationCoordinate2D centerCoordinate = mapView.region.center;
+        // 逆地理编码
+        AMapReGeocodeSearchRequest *regeo = [[AMapReGeocodeSearchRequest alloc] init];
+        regeo.location = [AMapGeoPoint locationWithLatitude:centerCoordinate.latitude longitude:centerCoordinate.longitude];
+        regeo.requireExtension = YES;
+        [self.search AMapReGoecodeSearch:regeo];
+
+        mapView.onRegionCenterChange(@{
+            @"center": @{
+               @"latitude": @(centerCoordinate.latitude),
+               @"longitude": @(centerCoordinate.longitude),
+           }
+        });
+    }
+    
+    
     if (mapView.onStatusChangeComplete) {
         MAMapStatus *status = mapView.getMapStatus;
         mapView.onStatusChangeComplete(@{
@@ -188,6 +224,18 @@ RCT_EXPORT_METHOD(setStatus:(nonnull NSNumber *)reactTag params:(NSDictionary *)
         });
     }
 }
+
+
+/* 逆地理编码回调. */
+- (void)onReGeocodeSearchDone:(AMapReGeocodeSearchRequest *)request response:(AMapReGeocodeSearchResponse *)response
+{
+    if (response.regeocode != nil)
+    {
+          //解析response获取地址描述，具体解析见 Demo
+        NSLog(@"%@",response.regeocode.formattedAddress);
+    }
+}
+
 
 - (void)mapInitComplete:(AMapView *)mapView {
     mapView.loaded = YES;
